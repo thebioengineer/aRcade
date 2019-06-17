@@ -1,5 +1,8 @@
 
-#' importFrom keypress keypress
+#' game<-new("snake")
+#' game$run(return_info = TRUE,plot_board = TRUE)
+#' game$run_iter("up")
+
 snake<-setRefClass("snake",
    fields=list(
      # System variables
@@ -14,13 +17,14 @@ snake<-setRefClass("snake",
      height="numeric",
      width="numeric",
      board="matrix",
+     log="character",
 
      food = "numeric"
      ),
 
    methods=list(
 
-     init = function(height=20,width=20){
+     init = function(height=20,width=20,seed=floor(runif(1)*100)){
        body<<-matrix(c(floor(width/2),floor(height/2),floor(width/2),floor(height/2)-1),byrow = FALSE,ncol=2)
        direction<<-"up"
        score<<-0
@@ -30,7 +34,8 @@ snake<-setRefClass("snake",
        dead<<-FALSE
        updatefood()
        updateboard()
-
+       log<<-as.character(seed)
+       set.seed(seed)
      },
 
      stepforward = function(){
@@ -110,16 +115,22 @@ snake<-setRefClass("snake",
      die = function(){
        dead<<-TRUE
        text(floor(width/2),floor(height/2),labels = "GAME OVER",col="red",cex=3)
-       return(score)
+       score<<--10
      },
 
-     updatedirection = function(){
-       line<-readline("snakedir: a,w,s,d")
-       print(line)
-       dir<-switch(tolower(line),"a"="left","w"="up","s"="down","d"="right",direction)
+     updatedirection = function(dir){
+       if(missing(dir)){
+         line<-readline("snakedir: a,w,s,d")
+         print(line)
+         dir<-switch(tolower(line),"a"="left","w"="up","s"="down","d"="right",direction)
+       }
        if(dir!=direction & okayDir(dir)){
          direction<<-dir
        }
+     },
+
+     updateLog = function(){
+       log<<-c(log,direction)
      },
 
      okayDir=function(dir){
@@ -130,21 +141,47 @@ snake<-setRefClass("snake",
        init()
        if(plot_board){plotboard()}
        if(return_info){returnstatus()}
+       updatedirection()
        while(!dead){
+         if(!dead){
          stepforward()
          plotboard()
          if(plot_board){plotboard()}
          if(return_info){returnstatus()}
          updatedirection()
-
+         }
        }
        text(floor(width/2),floor(height/2),labels = "GAME OVER",col="red",cex=3)
+     },
+
+     run_iter = function(direction,initialize=FALSE,returnStatus=FALSE){
+       if(initialize){
+         init()
+       }
+       if(!dead){
+         updatedirection(direction)
+         updateLog()
+         stepforward()
+       }else{
+         return("DEAD")
+       }
+
+       if(returnStatus){
+         returnstatus()
+       }
+     },
+
+     replay = function(log,seed){
+       init(seed = seed)
+       plotboard()
+       for(move in log){
+        run_iter(move)
+        plotboard()
+        Sys.sleep(.25)
+       }
      }
    )
 )
 
 game<-new("snake")
-
-game$run(return_info = TRUE,plot_board = TRUE)
-
-
+snake$replay(c(rep("up",5),rep("left",5),rep("down",10)),seed=10)
