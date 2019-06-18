@@ -3,7 +3,7 @@ title: "AI aRcade: SNAKE"
 author: "Ellis Hughes"
 output: html_notebook
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 Training Neural Nets to play video games is something that has become very popular, if you believe all the blogposts and articles that have come out recently. However, most examples are written using python. In this document I will attempt to show you how to do a similar thing in R. 
@@ -44,6 +44,65 @@ res<-saveGIF(game$replay(c(rep("left",2),
 
 Things get logged, so we can watch how it behaves once it is trained!
 
+
+## Naive
+
+There is a tendancy now-adays to simply throw a deep learning or some other complicated machine learning model at a problem, and wipe your hands of it. However, we are not those sorts of data scientists. We want to make sure our model learns and does better than random chance!
+
+To do this, we will throw a random model that does not learn into our player, and see how it behaves. First, I will generate all the code for our "naive" player.
+
+```{r naive_setup}
+
+naive_model<-structure(class="naive",
+                       .Data="naive_model",
+                       .predict=function(){
+                         output<-c(0,0,0,0)
+                         output[sample(1:4,1)]<-1
+                         return(output)
+                         })
+
+predict.naive<-function(object,...){
+  func<-attr(naive_model,".predict")
+  func()
+}
+
+fit.naive<-function(object,...){
+  invisible(object)
+}
+
+
+predict(naive_model,runif(200))
+
+
+```
+
+
+```{r test_naive_model}
+source(file.path(here::here(),"R","model_player.R"))
+
+player<-new("model_player")
+
+player$addModel(naive_model)
+
+player$train(200)
+
+par(mar=c(5, 5, 5, 5), xaxs='i', yaxs='i')
+plot(sapply(player$logs,`[[`,3),sapply(player$logs,`[[`,2))
+
+bestScore<-max(sapply(player$logs,`[[`,2))
+bestPerf<-which.max(sapply(player$logs,function(x)ifelse(x[[2]]==10,length(x[[1]]),0)))
+
+steps<-player$logs[[bestPerf]][[1]]
+res<-saveGIF(
+  game$replay(steps[-1],as.numeric(steps[1]),delay = .1),
+  movie.name = "naive_animation.gif",
+  extra.opts= "-delay 10")
+
+```
+[](naive_animation.gif)
+
+
+
 ## The Model
 
 Using the 'keras' library, I am able to interact with the tensorflow underpinnings and create a deep learning neural network. The work put in by the RStudio gang is truely amazing, and they make using tensorflow feel as natural as any model building in R. 
@@ -56,18 +115,18 @@ library(keras)
 snake_model <- keras_model_sequential()
 
 snake_model %>%
-  layer_dense(units = 512, activation = 'relu', input_shape = c(402)) %>% 
-  layer_dense(512, activation='relu') %>% 
+  layer_dense(units = 256, activation = 'relu', input_shape = c(11)) %>% 
+  layer_dense(256, activation='relu') %>% 
   layer_dropout(0.15) %>% 
-  layer_dense(512,activation = "relu")%>%
+  layer_dense(256,activation = "relu")%>%
   layer_dropout(0.15) %>%   
-  layer_dense(512,activation = "relu")%>%
+  layer_dense(256,activation = "relu")%>%
   layer_dropout(0.15) %>%
-  layer_dense(512,activation = "relu")%>%
+  layer_dense(256,activation = "relu")%>%
   layer_dropout(0.15) %>%   
-  layer_dense(512,activation = "relu")%>%
+  layer_dense(256,activation = "relu")%>%
   layer_dropout(0.15) %>%   
-  layer_dense(512,activation = "relu")%>%
+  layer_dense(256,activation = "relu")%>%
   layer_dropout(0.15) %>% 
   layer_dense(4,activation = "softmax")
 

@@ -1,5 +1,5 @@
-library(keras)
 library(abind)
+library(keras)
 
 
 modelGame<-setRefClass("model_player",
@@ -47,6 +47,7 @@ modelGame<-setRefClass("model_player",
           logs<<-log
           newgame()
         }
+
       },
       init = function(){
         game<<-new("snake")
@@ -55,6 +56,10 @@ modelGame<-setRefClass("model_player",
         status_new <-game$run_iter(status_old$direction,returnStatus = TRUE)
         nextstep<-as.numeric(c("up","down","left","right")%in%status_old$direction)
         nextstep[nextstep==1]<-status_new$score
+
+        # headLoc<-statu
+
+
 
         datasets <<- array(as.matrix(data.frame(status_old$board)),dim = c(nrow(status_old$board),ncol(status_old$board),1))
         distance <<- array(as.matrix(data.frame(status_old$dist_to_fruit)),dim = c(1,2))
@@ -98,11 +103,11 @@ modelGame<-setRefClass("model_player",
                               array(as.matrix(data.frame(distance[minibatch,,drop=FALSE])),dim = c(length(minibatch),2)),along=2)
         mini_dir     <- direction[minibatch,,drop=FALSE]
 
-        model[[1]] %>%
-          fit(mini_dataset,
-              mini_dir,
-              epochs = 1,
-              verbose = 0)
+        fit( model[[1]],
+             mini_dataset,
+             mini_dir,
+             epochs = 1,
+             verbose = 0)
 
         model<<-list(model[[1]])
 

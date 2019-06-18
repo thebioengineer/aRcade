@@ -119,7 +119,8 @@ snake<-setRefClass("snake",
        list(score=score,
             board=board,
             direction=direction,
-            dist_to_fruit=c(food[1]-body[1,1],food[2]-body[1,2]))
+            dist_to_fruit=c(food[1]-body[1,1],food[2]-body[1,2]),
+            body = body)
      },
 
      die = function(){
