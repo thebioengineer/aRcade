@@ -1,7 +1,11 @@
 
 #' game<-new("snake")
 #' game$run(return_info = TRUE,plot_board = TRUE)
+#'
 #' game$run_iter("up")
+#'
+#' game$replay(c(rep("left",2),rep("down",7),rep("right",5),"down",rep("left",2),"up",rep("left",5)),seed=10)
+
 
 snake<-setRefClass("snake",
    fields=list(
@@ -32,10 +36,12 @@ snake<-setRefClass("snake",
        height<<-height
        width<<-width
        dead<<-FALSE
-       updatefood()
-       updateboard()
        log<<-as.character(seed)
        set.seed(seed)
+
+       updatefood()
+       updateboard()
+
      },
 
      stepforward = function(){
@@ -54,7 +60,9 @@ snake<-setRefClass("snake",
        }
 
        updatebody(nextloc)
-       updateboard()
+       if(!dead){
+        updateboard()
+       }
      },
      nextstep = function(){
        switch(direction,
@@ -98,6 +106,7 @@ snake<-setRefClass("snake",
      },
 
      plotboard = function(){
+       par(mar=c(0, 0, 1, 0), xaxs='i', yaxs='i')
        plot(0,0,xlim=c(0,width),ylim=c(0,height),type='n',axes=FALSE, frame.plot=TRUE)
        Axis(side=1, labels=FALSE)
        Axis(side=2, labels=FALSE)
@@ -109,13 +118,13 @@ snake<-setRefClass("snake",
      returnstatus = function(){
        list(score=score,
             board=board,
-            direction=direction)
+            direction=direction,
+            dist_to_fruit=c(food[1]-body[1,1],food[2]-body[1,2]))
      },
 
      die = function(){
        dead<<-TRUE
-       text(floor(width/2),floor(height/2),labels = "GAME OVER",col="red",cex=3)
-       score<<--10
+       score<<-(-10)
      },
 
      updatedirection = function(dir){
@@ -143,21 +152,17 @@ snake<-setRefClass("snake",
        if(return_info){returnstatus()}
        updatedirection()
        while(!dead){
-         if(!dead){
+
          stepforward()
          plotboard()
          if(plot_board){plotboard()}
          if(return_info){returnstatus()}
-         updatedirection()
-         }
+         if(!dead){updatedirection()}
        }
        text(floor(width/2),floor(height/2),labels = "GAME OVER",col="red",cex=3)
      },
 
-     run_iter = function(direction,initialize=FALSE,returnStatus=FALSE){
-       if(initialize){
-         init()
-       }
+     run_iter = function(direction,returnStatus=FALSE){
        if(!dead){
          updatedirection(direction)
          updateLog()
@@ -171,17 +176,16 @@ snake<-setRefClass("snake",
        }
      },
 
-     replay = function(log,seed){
+     replay = function(steps,seed,delay=.5){
        init(seed = seed)
        plotboard()
-       for(move in log){
+       for(move in steps){
         run_iter(move)
         plotboard()
-        Sys.sleep(.25)
+        Sys.sleep(delay)
        }
      }
    )
 )
 
-game<-new("snake")
-snake$replay(c(rep("up",5),rep("left",5),rep("down",10)),seed=10)
+

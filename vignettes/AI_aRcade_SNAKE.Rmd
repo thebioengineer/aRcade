@@ -1,0 +1,101 @@
+---
+title: "AI aRcade: SNAKE"
+author: "Ellis Hughes"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+Training Neural Nets to play video games is something that has become very popular, if you believe all the blogposts and articles that have come out recently. However, most examples are written using python. In this document I will attempt to show you how to do a similar thing in R. 
+
+At the end of this blog post, you will have the tools to write your own ML tool to learn to play snake.
+
+## The Game
+
+The game I chose is one that most people know - snake. If you never had a nokia growing up, you may have never played this classic arcade game. The rules are simple, at a set interval a "snake" will move one space and continue moving in that direction until you tell it to change directions from the keypad. The goal is to eat as much fruit as possible by having the head of your snake go over the point where the food is, without hitting either the walls or your own body. Sounds simple, but with each fruit eaten, the snake gets longer!!
+
+There were a few samples of code I based my snake game off of, mainly [this one](https://github.com/bsspirit/gridgame). However, I added a number of my own changes to my "snake" class to make it provide information I was interested in. Most changes were due to the fact I was writing one game, so a more robust framework was not necessary. Below you can see the beginning sequence:
+
+```{r prepare_game,fig.height=4,fig.width=4}
+source(file.path(here::here(),"R","snake.R"))
+
+game<-new("snake")
+game$init()
+game$plotboard()
+```
+
+I added a feature to be able to give a sequence of moves, and then generate the resulting steps.
+
+```{r giphify}
+
+library(animation)
+res<-saveGIF(game$replay(c(rep("left",2),
+                      rep("down",7),
+                      rep("right",5),
+                      "down",
+                      rep("left",2),
+                      "up",
+                      rep("left",5)),seed=10,delay = .1),
+        movie.name = "animation.gif",
+        extra.opts= "-delay 10")
+
+```
+[](animation.gif)
+
+Things get logged, so we can watch how it behaves once it is trained!
+
+## The Model
+
+Using the 'keras' library, I am able to interact with the tensorflow underpinnings and create a deep learning neural network. The work put in by the RStudio gang is truely amazing, and they make using tensorflow feel as natural as any model building in R. 
+
+#### Setup
+
+```{r setup model}
+library(keras)
+
+snake_model <- keras_model_sequential()
+
+snake_model %>%
+  layer_dense(units = 512, activation = 'relu', input_shape = c(402)) %>% 
+  layer_dense(512, activation='relu') %>% 
+  layer_dropout(0.15) %>% 
+  layer_dense(512,activation = "relu")%>%
+  layer_dropout(0.15) %>%   
+  layer_dense(512,activation = "relu")%>%
+  layer_dropout(0.15) %>%
+  layer_dense(512,activation = "relu")%>%
+  layer_dropout(0.15) %>%   
+  layer_dense(512,activation = "relu")%>%
+  layer_dropout(0.15) %>%   
+  layer_dense(512,activation = "relu")%>%
+  layer_dropout(0.15) %>% 
+  layer_dense(4,activation = "softmax")
+
+optimizer <- optimizer_adam(lr = 0.0005)
+
+snake_model %>% compile(
+  loss = "mse", 
+  optimizer = optimizer
+)
+
+```
+
+The model here is a series of LSTM neural networks, feeding into 2 dense layers
+
+
+```{r prepare_model,fig.height=4,fig.width=4}
+source(file.path(here::here(),"R","model_player.R"))
+
+player<-new("model_player")
+
+player$addModel(snake_model)
+
+player$train(200)
+
+plot(sapply(player$logs,`[[`,3),sapply(player$logs,`[[`,2))
+
+```
+
+
+
+
