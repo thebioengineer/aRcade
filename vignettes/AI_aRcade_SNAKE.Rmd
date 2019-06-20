@@ -29,6 +29,7 @@ I added a feature to be able to give a sequence of moves, and then generate the 
 ```{r giphify}
 
 library(animation)
+
 res<-saveGIF(game$replay(c(rep("left",2),
                       rep("down",7),
                       rep("right",5),
@@ -37,7 +38,7 @@ res<-saveGIF(game$replay(c(rep("left",2),
                       "up",
                       rep("left",5)),seed=10,delay = .1),
         movie.name = "animation.gif",
-        extra.opts= "-delay 10")
+        interval= .3)
 
 ```
 [](animation.gif)
@@ -82,12 +83,9 @@ source(file.path(here::here(),"R","model_player.R"))
 
 player<-new("model_player")
 
-player$addModel(naive_model)
+player$addModel(naive_model,fit.naive)
 
-player$train(200)
-
-par(mar=c(5, 5, 5, 5), xaxs='i', yaxs='i')
-plot(sapply(player$logs,`[[`,3),sapply(player$logs,`[[`,2))
+player$train(20)
 
 bestScore<-max(sapply(player$logs,`[[`,2))
 bestPerf<-which.max(sapply(player$logs,function(x)ifelse(x[[2]]==10,length(x[[1]]),0)))
@@ -96,7 +94,7 @@ steps<-player$logs[[bestPerf]][[1]]
 res<-saveGIF(
   game$replay(steps[-1],as.numeric(steps[1]),delay = .1),
   movie.name = "naive_animation.gif",
-  extra.opts= "-delay 10")
+   interval= .25)
 
 ```
 [](naive_animation.gif)
@@ -115,19 +113,15 @@ library(keras)
 snake_model <- keras_model_sequential()
 
 snake_model %>%
-  layer_dense(units = 256, activation = 'relu', input_shape = c(11)) %>% 
+  layer_dense(units = 256, activation = 'relu', input_shape = c(16)) %>% 
+  layer_dropout(0.15) %>% 
   layer_dense(256, activation='relu') %>% 
   layer_dropout(0.15) %>% 
-  layer_dense(256,activation = "relu")%>%
+  layer_dense(128,activation = "relu")%>%
   layer_dropout(0.15) %>%   
-  layer_dense(256,activation = "relu")%>%
-  layer_dropout(0.15) %>%
-  layer_dense(256,activation = "relu")%>%
+  layer_dense(128,activation = "relu")%>%
   layer_dropout(0.15) %>%   
-  layer_dense(256,activation = "relu")%>%
-  layer_dropout(0.15) %>%   
-  layer_dense(256,activation = "relu")%>%
-  layer_dropout(0.15) %>% 
+  layer_dense(128,activation = "relu")%>%
   layer_dense(4,activation = "softmax")
 
 optimizer <- optimizer_adam(lr = 0.0005)
@@ -139,7 +133,7 @@ snake_model %>% compile(
 
 ```
 
-The model here is a series of LSTM neural networks, feeding into 2 dense layers
+The model here is a series of densely connected layers with dropout neural networks.
 
 
 ```{r prepare_model,fig.height=4,fig.width=4}
@@ -147,11 +141,27 @@ source(file.path(here::here(),"R","model_player.R"))
 
 player<-new("model_player")
 
-player$addModel(snake_model)
+player$addModel(snake_model,tuning_var = 60)
 
-player$train(200)
+player$train(150)
 
 plot(sapply(player$logs,`[[`,3),sapply(player$logs,`[[`,2))
+
+
+modell<-player$model[[1]]
+
+
+
+
+bestScore<-max(sapply(player$logs,`[[`,2))
+bestPerf<-which.max(sapply(player$logs,function(x)ifelse(x[[2]]==bestScore,length(x[[1]]),0)))
+
+steps<-player$logs[[bestPerf]][[1]]
+res<-saveGIF(
+  game$replay(steps[-1],as.numeric(steps[1]),delay = .1),
+  movie.name = "init_animation2.gif",
+   interval= .25)
+
 
 ```
 

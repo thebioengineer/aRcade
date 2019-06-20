@@ -17,6 +17,7 @@ snake<-setRefClass("snake",
      length="numeric",
      dead="logical",
 
+     score_total="numeric",
      score="numeric",
      height="numeric",
      width="numeric",
@@ -32,6 +33,7 @@ snake<-setRefClass("snake",
        body<<-matrix(c(floor(width/2),floor(height/2),floor(width/2),floor(height/2)-1),byrow = FALSE,ncol=2)
        direction<<-"up"
        score<<-0
+       score_total<<-0
        length<<-2
        height<<-height
        width<<-width
@@ -55,7 +57,8 @@ snake<-setRefClass("snake",
        isfood=all(food==nextloc)
        if(isfood){
          length<<-length+1
-         score <<- score + ((floor(log(length))+1) * 5)
+         score_total  <<- score_total + ((floor(log(length))+1) * 5)
+         score <<- ((floor(log(length))+1) * 10)
          updatefood()
        }
 
@@ -64,7 +67,7 @@ snake<-setRefClass("snake",
         updateboard()
        }
      },
-     nextstep = function(){
+     nextstep = function(direct){
        switch(direction,
               "up"=c(0,1),
               "down"=c(0,-1),
@@ -112,7 +115,7 @@ snake<-setRefClass("snake",
        Axis(side=2, labels=FALSE)
        points(body[,1],body[,2],col=c("blue",rep('black',length-1)),pch=15,cex=2)
        points(food[1],food[2],col="red",pch=16,cex=2)
-       title(main = paste("SNAKE! score -",score))
+       title(main = paste("SNAKE! score -",score_total))
      },
 
      returnstatus = function(){
@@ -120,12 +123,14 @@ snake<-setRefClass("snake",
             board=board,
             direction=direction,
             dist_to_fruit=c(food[1]-body[1,1],food[2]-body[1,2]),
-            body = body)
+            body = body,
+            fruit = food,
+            total_score = score_total)
      },
 
      die = function(){
        dead<<-TRUE
-       score<<-(-10)
+       score<<-(-30)
      },
 
      updatedirection = function(dir){
