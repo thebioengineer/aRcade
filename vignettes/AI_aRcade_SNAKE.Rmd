@@ -113,15 +113,15 @@ library(keras)
 snake_model <- keras_model_sequential()
 
 snake_model %>%
-  layer_dense(units = 256, activation = 'relu', input_shape = c(16)) %>% 
+  layer_dense(units = 258, activation = 'relu', input_shape = c(12)) %>% 
   layer_dropout(0.15) %>% 
-  layer_dense(256, activation='relu') %>% 
+  layer_dense(258, activation='relu') %>% 
   layer_dropout(0.15) %>% 
-  layer_dense(128,activation = "relu")%>%
+  layer_dense(258,activation = "relu")%>%
   layer_dropout(0.15) %>%   
-  layer_dense(128,activation = "relu")%>%
+  layer_dense(258,activation = "relu")%>%
   layer_dropout(0.15) %>%   
-  layer_dense(128,activation = "relu")%>%
+  layer_dense(258,activation = "relu")%>%
   layer_dense(4,activation = "softmax")
 
 optimizer <- optimizer_adam(lr = 0.0005)
@@ -141,7 +141,7 @@ source(file.path(here::here(),"R","model_player.R"))
 
 player<-new("model_player")
 
-player$addModel(snake_model,tuning_var = 60)
+player$addModel(snake_model,tuning_var = 40)
 
 player$train(150)
 

@@ -24,8 +24,10 @@ modelGame<-setRefClass("model_player",
         gamma<<-gamma
         tuningvar<<-tuning_var
       },
-      train = function(ngames){
-        init()
+      train = function(ngames,restartTraining=FALSE){
+        if(restartTraining | length(player$direction)==0){
+          init()
+        }
         for(game_num in seq(1:ngames)){
           cat(paste("training on game:",game_num))
           game_status<-game$returnstatus()
@@ -68,7 +70,7 @@ modelGame<-setRefClass("model_player",
         dist_fruit_orig<-sqrt(((status_old$fruit[1]-status_old$body[1,1])^2) + (status_old$fruit[2]-status_old$body[1,2])^2)
         dist_fruit_next<-sqrt(((status_new$fruit[1]-status_new$body[1,1])^2) + (status_new$fruit[2]-status_new$body[1,2])^2)
 
-        nextstep[nextstep==1] <- (dist_fruit_orig-dist_fruit_next)*10
+        # nextstep[nextstep==1] <- (dist_fruit_orig-dist_fruit_next)*10
 
         headLoc<-status_old$body[1,]
         fruitLoc<-status_old$fruit
@@ -141,7 +143,7 @@ modelGame<-setRefClass("model_player",
             }
             nextds_rs <- array(c(headLoc,fruitLoc,dirFruit,danger_body,danger_wall),dim = c(1,16))
           }
-          nextmove<-predict(model[[1]],nextds_rs)
+          nextmove<-predict(model[[1]],nextds_rs[,5:16,drop=FALSE])
         }
 
         if(prob){
@@ -180,14 +182,14 @@ modelGame<-setRefClass("model_player",
             dist_fruit_next<-sqrt(((mini_dataset_next[j,3]-mini_dataset_next[j,1])^2) + (mini_dataset_next[j,4]-mini_dataset_next[j,2])^2)
 
             if(mini_score[j]==0)
-              target <- target + (-5+((dist_fruit_orig-dist_fruit_next)*10))
+              target <- target + (-5+(dist_fruit_orig-dist_fruit_next)*10)
 
             target_f[which.max(mini_dir[j,])] <- target
 
             target_f<-array_reshape(target_f,c(1,4))
 
             fitfunc( trainmodel,
-             mini_dataset[j,,drop=FALSE],
+             mini_dataset[j,5:16,drop=FALSE],
              target_f,
              epochs = 1,
              verbose = 0)

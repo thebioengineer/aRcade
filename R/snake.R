@@ -58,7 +58,7 @@ snake<-setRefClass("snake",
        if(isfood){
          length<<-length+1
          score_total  <<- score_total + ((floor(log(length))+1) * 5)
-         score <<- ((floor(log(length))+1) * 10)
+         score <<- 10
          updatefood()
        }
 
